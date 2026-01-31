@@ -9,15 +9,12 @@
 
 mod display;
 
-use core::u32::MAX;
-
 use esp_hal::clock::CpuClock;
 use esp_hal::main;
 use esp_hal::rmt::Rmt;
-use esp_hal::rng::Rng;
 use esp_hal::time::{Duration, Instant, Rate};
 use esp_hal_smartled::{SmartLedsAdapter, smart_led_buffer};
-use smart_leds::{RGB8, SmartLedsWrite};
+use smart_leds::SmartLedsWrite;
 use crate::display::image_display::Display;
 use crate::display::images::Image;
 
@@ -39,54 +36,6 @@ const CIRCLE_OUTER_RING_COUNT: usize = 32;
 const GRID_LED_COUNT: usize = 64;
 const LED_BRIGHTNESS_LEVEL: u8 = 2;
 const COUNT: usize = GRID_LED_COUNT;
-
-
-
-fn cycle_color(color: &mut RGB8) {
-    let temp = color.r;
-    color.r = color.b;
-    color.b = color.g;
-    color.g = temp;
-}
-
-fn apply_color_to_strip(color_strip: &mut [RGB8; COUNT], color: RGB8) {
-    color_strip.iter_mut().for_each(| strip_color | {
-        strip_color.r = color.r;
-        strip_color.g = color.g;
-        strip_color.b = color.b;
-    });
-}
-
-fn move_color_with_wrap_around(color_strip: &mut [RGB8; COUNT], color: & RGB8, color_index: usize, spread: usize) {
-    color_strip.iter_mut().enumerate().for_each(| (index, strip_color) | {
-        if index >= color_index - spread && index <= color_index + spread {
-            strip_color.r = color.r;
-            strip_color.g = color.g;
-            strip_color.b = color.b;
-        } else {
-            strip_color.r = 0;
-            strip_color.g = 0;
-            strip_color.b = 0;
-        }
-    });
-}
-
-fn set_brightness(color: &mut RGB8, brightness: u8) {
-    color.r = brightness;
-    color.g = brightness;
-    color.b = brightness;
-}
-
-fn get_random_range(rng: &Rng) -> f64 {
-    let random = rng.random();
-    random as f64 / MAX as f64
-}
-
-fn randomize_color(color: &mut RGB8, rng: &Rng) {
-    color.r = (color.r as f64 * get_random_range(rng)) as u8;
-    color.g = (color.g as f64 * get_random_range(rng)) as u8;
-    color.b = (color.b as f64 * get_random_range(rng)) as u8;
-}
 
 #[main]
 fn main() -> ! {
