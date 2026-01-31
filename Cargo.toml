@@ -1,11 +1,11 @@
 [package]
 edition      = "2024"
-name         = "first_test"
+name         = "embedded_image_display"
 rust-version = "1.88"
 version      = "0.1.0"
 
 [[bin]]
-name = "first_test"
+name = "embedded_image_display"
 path = "./src/bin/main.rs"
 
 [dependencies]
