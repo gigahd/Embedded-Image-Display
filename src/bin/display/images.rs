@@ -1,9 +1,16 @@
+use core::cell::Cell;
+
+use defmt::info;
 use smart_leds::RGB8;
 use crate::display::image_display::Displayable;
 
 pub enum ImageDataType {
     RGB565,
     RGB888,
+}
+
+enum TransitionType {
+    Linear
 }
 
 pub struct Image<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize> {
@@ -65,5 +72,53 @@ impl<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize> Dis
                 })
             }
         }
+    }
+}
+
+pub struct AnimatedImage<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize, const IMAGE_COUNT: usize> {
+    images: [&'ch Image<'ch, WIDTH, HEIGHT, PIXEL_COUNT>; IMAGE_COUNT],
+    image_index: Cell<f32>,
+}
+
+fn lerp(a: u8, b: u8, t: f32) -> u8{
+    (a as f32 + (t * (b as f32 - a as f32))) as u8
+}
+
+fn lerp_color(color_one: RGB8, color_two: RGB8, alpha: f32) -> RGB8 {
+        RGB8::new(
+            lerp(color_one.r, color_two.r, alpha),
+            lerp(color_one.g, color_two.g, alpha),
+            lerp(color_one.b, color_two.b, alpha)
+        )
+    }
+
+impl<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize, const IMAGE_COUNT: usize> AnimatedImage<'ch, WIDTH, HEIGHT, PIXEL_COUNT, IMAGE_COUNT> {
+    pub fn new(images: [&'ch Image<'ch, WIDTH, HEIGHT, PIXEL_COUNT>; IMAGE_COUNT]) -> Self {
+        Self { images, image_index: Cell::new(0.0) }
+    }
+
+    
+
+    pub fn cycle_image(&self) {
+        const NEXT_IMAGE: f32 = 1.0;
+        self.update_image(NEXT_IMAGE);
+    }
+    pub fn update_image(&self, alpha: f32) {
+        self.image_index.set((self.image_index.get() + alpha) % IMAGE_COUNT as f32);
+    }
+}
+
+impl<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize, const IMAGE_COUNT: usize> Displayable<PIXEL_COUNT> for AnimatedImage<'ch, WIDTH, HEIGHT, PIXEL_COUNT, IMAGE_COUNT> {
+    fn to_rgb8_colors(&self) -> [RGB8; PIXEL_COUNT] {
+        let index = self.image_index.get();
+        let begin_colors = self.images[index as usize].to_rgb8_colors();
+        let end_colors = self.images[((index + 1.0) % IMAGE_COUNT as f32) as usize].to_rgb8_colors();
+        let mut out = [RGB8::default(); PIXEL_COUNT];
+        for i in 0..PIXEL_COUNT {
+            let begin_color = begin_colors[i];
+            let end_color = end_colors[i];
+            out[i] = lerp_color(begin_color, end_color, index % 1.0);
+        };
+        out
     }
 }
