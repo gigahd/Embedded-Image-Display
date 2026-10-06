@@ -1,6 +1,5 @@
 use core::cell::Cell;
 
-use defmt::info;
 use smart_leds::RGB8;
 use crate::display::image_display::Displayable;
 
@@ -9,7 +8,8 @@ pub enum ImageDataType {
     RGB888,
 }
 
-enum TransitionType {
+pub enum TransitionType {
+    Constant,
     Linear
 }
 
@@ -77,27 +77,30 @@ impl<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize> Dis
 
 pub struct AnimatedImage<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize, const IMAGE_COUNT: usize> {
     images: [&'ch Image<'ch, WIDTH, HEIGHT, PIXEL_COUNT>; IMAGE_COUNT],
+    transition_type: TransitionType,
     image_index: Cell<f32>,
 }
 
-fn lerp(a: u8, b: u8, t: f32) -> u8{
-    (a as f32 + (t * (b as f32 - a as f32))) as u8
+fn lerp(a: f32, b: f32, t: f32) -> f32 {
+    a + (t * (b - a))
 }
 
 fn lerp_color(color_one: RGB8, color_two: RGB8, alpha: f32) -> RGB8 {
         RGB8::new(
-            lerp(color_one.r, color_two.r, alpha),
-            lerp(color_one.g, color_two.g, alpha),
-            lerp(color_one.b, color_two.b, alpha)
+            lerp(color_one.r as f32, color_two.r as f32, alpha) as u8,
+            lerp(color_one.g as f32, color_two.g as f32, alpha) as u8,
+            lerp(color_one.b as f32, color_two.b as f32, alpha) as u8
         )
     }
 
 impl<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize, const IMAGE_COUNT: usize> AnimatedImage<'ch, WIDTH, HEIGHT, PIXEL_COUNT, IMAGE_COUNT> {
     pub fn new(images: [&'ch Image<'ch, WIDTH, HEIGHT, PIXEL_COUNT>; IMAGE_COUNT]) -> Self {
-        Self { images, image_index: Cell::new(0.0) }
+        Self { images, transition_type: TransitionType::Linear, image_index: Cell::new(0.0) }
     }
 
-    
+    pub fn set_transition(&mut self, transition: TransitionType) {
+        self.transition_type = transition;
+    }
 
     pub fn cycle_image(&self) {
         const NEXT_IMAGE: f32 = 1.0;
@@ -113,12 +116,20 @@ impl<'ch, const WIDTH: usize, const HEIGHT: usize, const PIXEL_COUNT: usize, con
         let index = self.image_index.get();
         let begin_colors = self.images[index as usize].to_rgb8_colors();
         let end_colors = self.images[((index + 1.0) % IMAGE_COUNT as f32) as usize].to_rgb8_colors();
-        let mut out = [RGB8::default(); PIXEL_COUNT];
-        for i in 0..PIXEL_COUNT {
-            let begin_color = begin_colors[i];
-            let end_color = end_colors[i];
-            out[i] = lerp_color(begin_color, end_color, index % 1.0);
-        };
-        out
+        match self.transition_type {
+            TransitionType::Constant => {
+                begin_colors
+            }
+            TransitionType::Linear => {
+                let mut out = [RGB8::default(); PIXEL_COUNT];
+                for i in 0..PIXEL_COUNT {
+                    let begin_color = begin_colors[i];
+                    let end_color = end_colors[i];
+                    out[i] = lerp_color(begin_color, end_color, index % 1.0);
+                };
+                out
+            }
+        }
+        
     }
 }

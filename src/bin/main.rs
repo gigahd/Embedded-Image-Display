@@ -34,7 +34,7 @@ const STRIP_LED_COUNT: usize = 21;
 const CIRCLE_LED_COUNT: usize = 93;
 const CIRCLE_OUTER_RING_COUNT: usize = 32;
 const GRID_LED_COUNT: usize = 64;
-const LED_BRIGHTNESS_LEVEL: u8 = 100;
+const LED_BRIGHTNESS_LEVEL: u8 = 10;
 const COUNT: usize = GRID_LED_COUNT;
 
 const GRID_WIDTH: usize = 8;
@@ -48,11 +48,11 @@ fn main() -> ! {
     
     let bytes_one = include_bytes!("../../assets/output_test_1.raw");
     let image_one: Image<'_, GRID_WIDTH, GRID_HEIGHT, GRID_COUNT> = Image::new(bytes_one, display::images::ImageDataType::RGB565);
-    let bytes_two = include_bytes!("../../assets/output_test_2.raw");
+    let bytes_two = include_bytes!("../../assets/output_face.raw");
     let image_two: Image<'_, GRID_WIDTH, GRID_HEIGHT, GRID_COUNT> = Image::new(bytes_two, display::images::ImageDataType::RGB565);
-    let bytes_three = include_bytes!("../../assets/output_test_3.raw");
+    let bytes_three = include_bytes!("../../assets/output_face.raw");
     let image_three: Image<'_, GRID_WIDTH, GRID_HEIGHT, GRID_COUNT> = Image::new(bytes_three, display::images::ImageDataType::RGB565);
-    let bytes_four = include_bytes!("../../assets/output_test_4.raw");
+    let bytes_four = include_bytes!("../../assets/output_test_1.raw");
     let image_four: Image<'_, GRID_WIDTH, GRID_HEIGHT, GRID_COUNT> = Image::new(bytes_four, display::images::ImageDataType::RGB565);
 
 
